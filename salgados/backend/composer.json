@@ -1,0 +1,23 @@
+{
+    "name": "salgados-da-sara/backend",
+    "description": "Backend API for Salgados da Sara ordering system",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SalgadosDaSara\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "serve": "php -S localhost:8000"
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

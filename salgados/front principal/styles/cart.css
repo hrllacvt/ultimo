@@ -1,0 +1,376 @@
+/* Cart Styles */
+.cart-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.cart-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.cart-header h2 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.cart-items {
+    margin-bottom: 40px;
+}
+
+.cart-item {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 25px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.cart-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.12);
+}
+
+.cart-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.cart-item-info h3 {
+    color: #333;
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.cart-item-info .quantity-type {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.cart-item-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8f9fa;
+    border-radius: 25px;
+    padding: 5px;
+}
+
+.quantity-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.quantity-btn:hover {
+    background: #0056b3;
+    transform: scale(1.1);
+}
+
+.quantity-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.quantity-display {
+    font-weight: 600;
+    font-size: 1.1rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.remove-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.remove-btn:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.cart-item-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.unit-price {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.total-price {
+    color: #007bff;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+/* Cart Summary */
+.cart-summary {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 30px;
+}
+
+.delivery-options {
+    margin-bottom: 30px;
+}
+
+.delivery-options h3 {
+    color: #333;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.delivery-options .radio-label {
+    padding: 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.delivery-options .radio-label:hover {
+    border-color: #007bff;
+    background-color: #f8f9ff;
+}
+
+.delivery-options .radio-label input[type="radio"]:checked + .radio-custom {
+    background-color: #007bff;
+}
+
+.delivery-options .radio-label small {
+    display: block;
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.cart-total {
+    margin-bottom: 30px;
+}
+
+.total-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 1.1rem;
+}
+
+.total-line.total {
+    border-top: 2px solid #e9ecef;
+    padding-top: 20px;
+    margin-top: 10px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #007bff;
+}
+
+#continue-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 12px;
+}
+
+/* Empty Cart */
+.cart-empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: #6c757d;
+}
+
+.cart-empty h3 {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.cart-empty p {
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+.cart-empty .btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+}
+
+/* Payment Page */
+.payment-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.payment-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.payment-header h2 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.payment-methods {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.payment-methods .radio-label {
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.payment-methods .radio-label:hover {
+    border-color: #007bff;
+    background-color: #f8f9ff;
+}
+
+.payment-methods .radio-label input[type="radio"]:checked + .radio-custom {
+    background-color: #007bff;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.payment-actions .btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    min-width: 150px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cart-container,
+    .payment-container {
+        padding: 0 10px;
+    }
+    
+    .cart-header h2,
+    .payment-header h2 {
+        font-size: 2rem;
+    }
+    
+    .cart-item {
+        padding: 20px;
+    }
+    
+    .cart-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .cart-item-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .cart-summary {
+        padding: 20px;
+    }
+    
+    .delivery-options .radio-label {
+        padding: 12px;
+    }
+    
+    .payment-methods {
+        padding: 20px;
+    }
+    
+    .payment-methods .radio-label {
+        padding: 15px;
+        font-size: 1rem;
+    }
+    
+    .payment-actions {
+        flex-direction: column;
+    }
+    
+    .payment-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .cart-item {
+        padding: 15px;
+    }
+    
+    .cart-item-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .total-price,
+    .total-line.total {
+        font-size: 1.2rem;
+    }
+    
+    .quantity-controls {
+        gap: 8px;
+    }
+    
+    .quantity-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+    }
+}

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salgados da Sara</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/auth.css">
+    <link rel="stylesheet" href="styles/menu.css">
+    <link rel="stylesheet" href="styles/cart.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/profile.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Tela de Carregamento -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Carregando...</p>
+        </div>
+
+        <!-- Navegação Principal -->
+        <nav id="navbar" class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <h1>Salgados da Sara</h1>
+                </div>
+                <div class="nav-menu">
+                    <button class="nav-btn" onclick="showPage('cardapio')">Cardápio</button>
+                    <button class="nav-btn" onclick="showPage('historico')">Histórico</button>
+                    <button class="nav-btn cart-btn" onclick="showPage('carrinho')">
+                        Carrinho <span id="cart-count" class="cart-count">0</span>
+                    </button>
+                    <button class="nav-btn" onclick="showPage('perfil')">Perfil</button>
+                    <button class="nav-btn logout-btn" onclick="logout()">Sair</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Página de Login -->
+        <div id="login-page" class="page auth-page" style="display: none;">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1>Salgados da Sara</h1>
+                    <p>Faça login para continuar</p>
+                </div>
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-phone">Telefone</label>
+                        <input type="tel" id="login-phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Senha</label>
+                        <div class="password-input">
+                            <input type="password" id="login-password" name="password" required>
+                            <button type="button" class="toggle-password" onclick="togglePassword('login-password')">👁️</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Entrar</button>
+                    <div class="auth-links">
+                        <a href="#" onclick="showForgotPassword()">Esqueci minha senha</a>
+                        <a href="#" onclick="showRegister()">Não tenho conta</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Página de Registro -->
+        <div id="register-page" class="page auth-page" style="display: none;">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1>Criar Conta</h1>
+                    <p>Preencha seus dados para continuar</p>
+                </div>
+                <form id="register-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="reg-name">Nome Completo</label>
+                        <input type="text" id="reg-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-phone">Telefone</label>
+                        <input type="tel" id="reg-phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-email">Email</label>
+                        <input type="email" id="reg-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-address">Endereço</label>
+                        <input type="text" id="reg-address" name="address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-number">Número</label>
+                        <input type="text" id="reg-number" name="number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-complement">Complemento</label>
+                        <input type="text" id="reg-complement" name="complement">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-city">Cidade</label>
+                        <select id="reg-city" name="city" required>
+                            <option value="">Selecione uma cidade</option>
+                            <option value="Quinze de Novembro">Quinze de Novembro</option>
+                            <option value="Selbach">Selbach</option>
+                            <option value="Colorado">Colorado</option>
+                            <option value="Alto Alegre">Alto Alegre</option>
+                            <option value="Fortaleza dos Valos">Fortaleza dos Valos</option>
+                            <option value="Tapera">Tapera</option>
+                            <option value="Lagoa dos Três Cantos">Lagoa dos Três Cantos</option>
+                            <option value="Saldanha Marinho">Saldanha Marinho</option>
+                            <option value="Espumoso">Espumoso</option>
+                            <option value="Campos Borges">Campos Borges</option>
+                            <option value="Santa Bárbara do Sul">Santa Bárbara do Sul</option>
+                            <option value="Não-Me-Toque">Não-Me-Toque</option>
+                            <option value="Boa Vista do Cadeado">Boa Vista do Cadeado</option>
+                            <option value="Boa Vista do Incra">Boa Vista do Incra</option>
+                            <option value="Carazinho">Carazinho</option>
+                            <option value="Ibirubá">Ibirubá</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password">Senha</label>
+                        <div class="password-input">
+                            <input type="password" id="reg-password" name="password" required>
+                            <button type="button" class="toggle-password" onclick="togglePassword('reg-password')">👁️</button>
+                        </div>
+                        <small class="password-requirements">
+                            A senha deve ter 6-15 caracteres, incluindo: 1 maiúscula, 1 número e 1 caractere especial
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-confirm-password">Confirmar Senha</label>
+                        <div class="password-input">
+                            <input type="password" id="reg-confirm-password" name="confirmPassword" required>
+                            <button type="button" class="toggle-password" onclick="togglePassword('reg-confirm-password')">👁️</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Criar Conta</button>
+                    <div class="auth-links">
+                        <a href="#" onclick="showLogin()">Já tenho conta</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Página Esqueci Minha Senha -->
+<div id="forgot-password-page" class="page auth-page" style="display: none;">
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>Esqueci Minha Senha</h1>
+            <p>Digite seu e-mail para recuperar a senha</p>
+        </div>
+        <form id="forgot-password-form" class="auth-form">
+            <div class="form-group">
+                <label for="forgot-email">E-mail</label>
+                <input type="email" id="forgot-email" name="email" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Recuperar Senha</button>
+            <div class="auth-links">
+                <a href="#" onclick="showLogin()">Voltar ao login</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+        <!-- Página do Menu -->
+        <div id="cardapio-page" class="page main-page">
+            <div class="menu-container">
+                <div class="menu-header">
+                    <h2>Nosso Cardápio</h2>
+                </div>
+                <div class="menu-categories">
+                    <button class="category-btn active" onclick="filterMenu('todos')">TODOS</button>
+                    <button class="category-btn" onclick="filterMenu('salgados')">SALGADOS</button>
+                    <button class="category-btn" onclick="filterMenu('sortidos')">SORTIDOS</button>
+                    <button class="category-btn" onclick="filterMenu('assados')">ASSADOS</button>
+                    <button class="category-btn" onclick="filterMenu('especiais')">ESPECIAIS</button>
+                    <button class="category-btn" onclick="filterMenu('opcionais')">OPCIONAIS</button>
+                </div>
+                <div id="menu-items" class="menu-items">
+                    <!-- Itens do menu serão carregados aqui -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Página do Carrinho -->
+        <div id="carrinho-page" class="page main-page" style="display: none;">
+            <div class="cart-container">
+                <div class="cart-header">
+                    <h2>Seu Carrinho</h2>
+                </div>
+                <div id="cart-items" class="cart-items">
+                    <!-- Itens do carrinho serão carregados aqui -->
+                </div>
+                <div class="cart-summary">
+                    <div class="delivery-options">
+                        <h3>Forma de Retirada</h3>
+                        <label class="radio-label">
+                            <input type="radio" name="delivery" value="pickup" checked>
+                            <span class="radio-custom"></span>
+                            Retirar no Local
+                            <small>RUA IDA BERLET 1738 B</small>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="delivery" value="delivery">
+                            <span class="radio-custom"></span>
+                            Para Entregar
+                        </label>
+                    </div>
+                    <div id="delivery-address-selection" class="delivery-address-selection" style="display: none;">
+                        <h4>Selecionar Endereço de Entrega</h4>
+                        <div id="address-options">
+                            <!-- Opções de endereço serão carregadas aqui -->
+                        </div>
+                    </div>
+                    <div class="cart-total">
+                        <div class="total-line">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">R$ 0,00</span>
+                        </div>
+                        <div class="total-line">
+                            <span>Entrega:</span>
+                            <span id="delivery-fee">R$ 0,00</span>
+                        </div>
+                        <div class="total-line total">
+                            <span>Total:</span>
+                            <span id="total">R$ 0,00</span>
+                        </div>
+                    </div>
+                    <button id="continue-btn" class="btn btn-primary" onclick="showPayment()">Continuar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Página de Pagamento -->
+        <div id="payment-page" class="page main-page" style="display: none;">
+            <div class="payment-container">
+                <div class="payment-header">
+                    <h2>Forma de Pagamento</h2>
+                </div>
+                <div class="payment-methods">
+                    <label class="radio-label">
+                        <input type="radio" name="payment" value="cash" checked>
+                        <span class="radio-custom"></span>
+                        Dinheiro
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="payment" value="card">
+                        <span class="radio-custom"></span>
+                        Cartão Débito/Crédito
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="payment" value="pix">
+                        <span class="radio-custom"></span>
+                        PIX
+                    </label>
+                </div>
+                <div class="payment-actions">
+                    <button class="btn btn-secondary" onclick="showPage('carrinho')">Voltar</button>
+                    <button class="btn btn-primary" onclick="finalizeOrder()">Finalizar Pedido</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Página de Histórico -->
+        <div id="historico-page" class="page main-page" style="display: none;">
+            <div class="history-container">
+                <div class="history-header">
+                    <h2>Histórico de Pedidos</h2>
+                </div>
+                <div id="history-items" class="history-items">
+                    <!-- Itens do histórico serão carregados aqui -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Página de Perfil -->
+        <div id="perfil-page" class="page main-page" style="display: none;">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <h2>Meu Perfil</h2>
+                </div>
+                
+                <div class="profile-sections">
+                    <div class="profile-nav">
+                        <button class="profile-nav-btn active" onclick="showProfileSection('info')">Minhas Informações</button>
+                        <button class="profile-nav-btn" onclick="showProfileSection('addresses')">Endereços</button>
+                        <button class="profile-nav-btn" onclick="showProfileSection('password')">Alterar Senha</button>
+                    </div>
+                    
+                    <div class="profile-content">
+                        <!-- Seção de Informações do Usuário -->
+                        <div id="profile-info" class="profile-section">
+                            <h3>Informações Pessoais</h3>
+                            <form id="profile-info-form">
+                                <div class="form-group">
+                                    <label for="profile-name">Nome Completo</label>
+                                    <input type="text" id="profile-name" name="name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-phone">Telefone</label>
+                                    <input type="tel" id="profile-phone" name="phone" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-email">Email</label>
+                                    <input type="email" id="profile-email" name="email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-address">Endereço</label>
+                                    <input type="text" id="profile-address" name="address" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-number">Número</label>
+                                    <input type="text" id="profile-number" name="number" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-complement">Complemento</label>
+                                    <input type="text" id="profile-complement" name="complement">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-city">Cidade</label>
+                                    <select id="profile-city" name="city" required>
+                                        <option value="">Selecione uma cidade</option>
+                                        <option value="Quinze de Novembro">Quinze de Novembro</option>
+                                        <option value="Selbach">Selbach</option>
+                                        <option value="Colorado">Colorado</option>
+                                        <option value="Alto Alegre">Alto Alegre</option>
+                                        <option value="Fortaleza dos Valos">Fortaleza dos Valos</option>
+                                        <option value="Tapera">Tapera</option>
+                                        <option value="Lagoa dos Três Cantos">Lagoa dos Três Cantos</option>
+                                        <option value="Saldanha Marinho">Saldanha Marinho</option>
+                                        <option value="Espumoso">Espumoso</option>
+                                        <option value="Campos Borges">Campos Borges</option>
+                                        <option value="Santa Bárbara do Sul">Santa Bárbara do Sul</option>
+                                        <option value="Não-Me-Toque">Não-Me-Toque</option>
+                                        <option value="Boa Vista do Cadeado">Boa Vista do Cadeado</option>
+                                        <option value="Boa Vista do Incra">Boa Vista do Incra</option>
+                                        <option value="Carazinho">Carazinho</option>
+                                        <option value="Ibirubá">Ibirubá</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Seção de Endereços -->
+                        <div id="profile-addresses" class="profile-section" style="display: none;">
+                            <div class="addresses-header">
+                                <h3>Meus Endereços</h3>
+                                <button class="btn btn-primary" onclick="showAddAddressModal()">Adicionar Endereço</button>
+                            </div>
+                            <div id="addresses-list" class="addresses-list">
+                                <!-- Endereços serão carregados aqui -->
+                            </div>
+                        </div>
+                        
+                        <!-- Seção de Alterar Senha -->
+                        <div id="profile-password" class="profile-section" style="display: none;">
+                            <h3>Alterar Senha</h3>
+                            <form id="change-password-form">
+                                <div class="form-group">
+                                    <label for="current-password">Senha Atual</label>
+                                    <div class="password-input">
+                                        <input type="password" id="current-password" name="currentPassword" required>
+                                        <button type="button" class="toggle-password" onclick="togglePassword('current-password')">👁️</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">Nova Senha</label>
+                                    <div class="password-input">
+                                        <input type="password" id="new-password" name="newPassword" required>
+                                        <button type="button" class="toggle-password" onclick="togglePassword('new-password')">👁️</button>
+                                    </div>
+                                    <small class="password-requirements">
+                                        A senha deve ter 6-15 caracteres, incluindo: 1 maiúscula, 1 número e 1 caractere especial
+                                    </small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-new-password">Confirmar Nova Senha</label>
+                                    <div class="password-input">
+                                        <input type="password" id="confirm-new-password" name="confirmNewPassword" required>
+                                        <button type="button" class="toggle-password" onclick="togglePassword('confirm-new-password')">👁️</button>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Alterar Senha</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Página Admin -->
+        <div id="admin-page" class="page admin-page" style="display: none;">
+            <div class="admin-login" id="admin-login">
+                <div class="auth-container">
+                    <div class="auth-header">
+                        <h1>Painel Administrativo</h1>
+                        <p>Digite suas credenciais</p>
+                    </div>
+                    <form id="admin-login-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="admin-user">Usuário</label>
+                            <input type="text" id="admin-user" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-password">Senha</label>
+                            <input type="password" id="admin-password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Entrar</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="admin-panel" id="admin-panel" style="display: none;">
+                <div class="admin-nav">
+                    <h2>Painel Admin</h2>
+                    <div class="admin-menu">
+                        <button class="admin-btn active" onclick="showAdminSection('pedidos')">Pedidos</button>
+                        <button class="admin-btn" onclick="showAdminSection('produtos')">Produtos</button>
+                        <button class="admin-btn" onclick="showAdminSection('administradores')">Administradores</button>
+                        <button class="admin-btn" onclick="showAdminSection('configuracoes')">Configurações</button>
+                        <button class="admin-btn logout-btn" onclick="adminLogout()">Sair</button>
+                    </div>
+                </div>
+                
+                <div class="admin-content">
+                    <div id="admin-pedidos" class="admin-section">
+                        <h3>Gerenciar Pedidos</h3>
+                        <div id="admin-orders" class="admin-orders">
+                            <!-- Pedidos serão carregados aqui -->
+                        </div>
+                    </div>
+                    
+                    <div id="admin-produtos" class="admin-section" style="display: none;">
+                        <h3>Gerenciar Produtos</h3>
+                        <button class="btn btn-primary" onclick="showAddProduct()">Adicionar Produto</button>
+                        <div id="admin-products" class="admin-products">
+                            <!-- Produtos serão carregados aqui -->
+                        </div>
+                    </div>
+                    
+                    <div id="admin-administradores" class="admin-section" style="display: none;">
+                        <h3>Gerenciar Administradores</h3>
+                        <button class="btn btn-primary" onclick="showAddAdmin()">Adicionar Administrador</button>
+                        <div id="admin-admins" class="admin-admins">
+                            <!-- Administradores serão carregados aqui -->
+                        </div>
+                    </div>
+                    
+                    <div id="admin-configuracoes" class="admin-section" style="display: none;">
+                        <h3>Configurações</h3>
+                        <div class="config-item">
+                            <label for="delivery-price">Valor da Entrega (R$)</label>
+                            <input type="number" id="delivery-price" step="0.01" min="0">
+                            <button class="btn btn-primary" onclick="updateDeliveryPrice()">Atualizar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modais -->
+        <div id="quantity-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-item-name">Item</h3>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="quantity-options">
+                        <label class="radio-label">
+                            <input type="radio" name="quantity-type" value="cento" checked>
+                            <span class="radio-custom"></span>
+                            Cento - <span id="price-cento">R$ 0,00</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="quantity-type" value="meio-cento">
+                            <span class="radio-custom"></span>
+                            Meio Cento - <span id="price-meio-cento">R$ 0,00</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="quantity-type" value="unidade">
+                            <span class="radio-custom"></span>
+                            Unidade (mín. 10) - <span id="price-unidade">R$ 0,00</span>
+                        </label>
+                    </div>
+                    <div id="unit-quantity" class="unit-quantity" style="display: none;">
+                        <label for="unit-count">Quantidade:</label>
+                        <input type="number" id="unit-count" min="10" value="10">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="addToCart()">Adicionar ao Carrinho</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Adicionar Endereço -->
+        <div id="add-address-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Adicionar Endereço</h3>
+                    <span class="close" onclick="closeAddressModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="add-address-form">
+                        <div class="form-group">
+                            <label for="address-name">Nome do Endereço</label>
+                            <input type="text" id="address-name" name="name" placeholder="Ex: Casa, Trabalho" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="address-street">Endereço</label>
+                            <input type="text" id="address-street" name="address" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="address-number">Número</label>
+                            <input type="text" id="address-number" name="number" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="address-complement">Complemento</label>
+                            <input type="text" id="address-complement" name="complement">
+                        </div>
+                        <div class="form-group">
+                            <label for="address-city">Cidade</label>
+                            <select id="address-city" name="city" required>
+                                <option value="">Selecione uma cidade</option>
+                                <option value="Quinze de Novembro">Quinze de Novembro</option>
+                                <option value="Selbach">Selbach</option>
+                                <option value="Colorado">Colorado</option>
+                                <option value="Alto Alegre">Alto Alegre</option>
+                                <option value="Fortaleza dos Valos">Fortaleza dos Valos</option>
+                                <option value="Tapera">Tapera</option>
+                                <option value="Lagoa dos Três Cantos">Lagoa dos Três Cantos</option>
+                                <option value="Saldanha Marinho">Saldanha Marinho</option>
+                                <option value="Espumoso">Espumoso</option>
+                                <option value="Campos Borges">Campos Borges</option>
+                                <option value="Santa Bárbara do Sul">Santa Bárbara do Sul</option>
+                                <option value="Não-Me-Toque">Não-Me-Toque</option>
+                                <option value="Boa Vista do Cadeado">Boa Vista do Cadeado</option>
+                                <option value="Boa Vista do Incra">Boa Vista do Incra</option>
+                                <option value="Carazinho">Carazinho</option>
+                                <option value="Ibirubá">Ibirubá</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeAddressModal()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="saveAddress()">Salvar Endereço</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensagens de Sucesso/Erro -->
+        <div id="message" class="message" style="display: none;"></div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/menu.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

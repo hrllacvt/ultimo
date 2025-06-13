@@ -1,0 +1,45 @@
+RewriteEngine On
+
+# Enable CORS for all origins during development
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+Header always set Access-Control-Max-Age "3600"
+
+# Handle CORS preflight requests
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# API Routes
+RewriteRule ^api/auth/login/?$ api/auth/login.php [L]
+RewriteRule ^api/auth/register/?$ api/auth/register.php [L]
+RewriteRule ^api/auth/forgot-password/?$ api/auth/forgot-password.php [L]
+RewriteRule ^api/auth/admin-login/?$ api/auth/admin-login.php [L]
+
+RewriteRule ^api/products/?$ api/products/read.php [L]
+RewriteRule ^api/products/create/?$ api/products/create.php [L]
+RewriteRule ^api/products/update/?$ api/products/update.php [L]
+RewriteRule ^api/products/delete/?$ api/products/delete.php [L]
+
+RewriteRule ^api/orders/?$ api/orders/read.php [L]
+RewriteRule ^api/orders/create/?$ api/orders/create.php [L]
+RewriteRule ^api/orders/update-status/?$ api/orders/update-status.php [L]
+
+RewriteRule ^api/admin/admins/?$ api/admin/admins.php [L]
+RewriteRule ^api/config/?$ api/config/config.php [L]
+
+# Deny access to sensitive files
+<Files "*.php">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+<Files "config/*">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+<Files "models/*">
+    Order Deny,Allow
+    Deny from all
+</Files>

@@ -1,0 +1,249 @@
+/* Menu Styles */
+.menu-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.menu-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.menu-header h2 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.menu-categories {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.category-btn {
+    padding: 12px 24px;
+    border: 2px solid #007bff;
+    background: white;
+    color: #007bff;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.category-btn:hover {
+    background: #007bff;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.category-btn.active {
+    background: #007bff;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.menu-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    padding: 0 20px;
+}
+
+.menu-item {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 25px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.menu-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    border-color: #007bff;
+}
+
+.menu-item h3 {
+    color: #333;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.menu-item .price {
+    color: #007bff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.menu-item .category {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.menu-item .description {
+    color: #555;
+    font-size: 0.95rem;
+    margin-top: 10px;
+    line-height: 1.5;
+}
+
+/* Empty state */
+.menu-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.menu-empty h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.menu-empty p {
+    font-size: 1rem;
+}
+
+/* Quantity Modal Specific Styles */
+.quantity-options {
+    margin-bottom: 20px;
+}
+
+.quantity-options .radio-label {
+    padding: 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.quantity-options .radio-label:hover {
+    border-color: #007bff;
+    background-color: #f8f9ff;
+}
+
+.quantity-options .radio-label input[type="radio"]:checked ~ .radio-custom {
+    background-color: #007bff;
+}
+
+.quantity-options .radio-label input[type="radio"]:checked {
+    border-color: #007bff;
+    background-color: #f8f9ff;
+}
+
+.unit-quantity {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.unit-quantity label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.unit-quantity input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.unit-quantity input:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Price highlighting */
+.price-highlight {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .menu-header h2 {
+        font-size: 2rem;
+    }
+    
+    .menu-categories {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding: 0 20px 10px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .category-btn {
+        flex: 0 0 auto;
+        font-size: 0.8rem;
+        padding: 10px 20px;
+    }
+    
+    .menu-items {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 10px;
+    }
+    
+    .menu-item {
+        padding: 20px;
+    }
+    
+    .menu-item h3 {
+        font-size: 1.2rem;
+    }
+    
+    .quantity-options .radio-label {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .menu-categories {
+        gap: 5px;
+    }
+    
+    .category-btn {
+        padding: 8px 16px;
+        font-size: 0.75rem;
+    }
+    
+    .menu-item {
+        padding: 15px;
+    }
+    
+    .menu-item h3 {
+        font-size: 1.1rem;
+    }
+    
+    .menu-item .price {
+        font-size: 1.1rem;
+    }
+}

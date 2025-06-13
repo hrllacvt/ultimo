@@ -9,6 +9,20 @@ const Cart = {
         Cart.loadCart();
         Cart.updateCartCount();
         Cart.setupDeliveryOptions();
+        Cart.loadDeliveryFee();
+    },
+
+    // Carregar taxa de entrega da API
+    loadDeliveryFee: async () => {
+        try {
+            const response = await ApiClient.get(`${API_CONFIG.endpoints.config}?key=taxa_entrega`);
+            if (response.sucesso && response.dados.taxa_entrega) {
+                Cart.deliveryFee = parseFloat(response.dados.taxa_entrega);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar taxa de entrega:', error);
+            // Manter valor padrão
+        }
     },
 
     // Carregar carrinho do localStorage
@@ -115,7 +129,7 @@ const Cart = {
             <div class="cart-item">
                 <div class="cart-item-header">
                     <div class="cart-item-info">
-                        <h3>${item.name}</h3>
+                        <h3>${item.nome}</h3>
                         <div class="quantity-type">
                             ${Utils.getQuantityLabel(item.quantityType, item.unitCount)}
                         </div>
@@ -180,10 +194,10 @@ const Cart = {
         const mainAddress = {
             id: 'main',
             name: 'Endereço Principal',
-            address: currentUser.address,
-            number: currentUser.number,
-            complement: currentUser.complement,
-            city: currentUser.city
+            address: currentUser.endereco,
+            number: currentUser.numero,
+            complement: currentUser.complemento,
+            city: currentUser.cidade
         };
 
         // Obter endereços adicionais
@@ -225,7 +239,7 @@ const Cart = {
 
         const subtotal = Cart.items.reduce((sum, item) => sum + item.totalPrice, 0);
         const isDelivery = document.querySelector('input[name="delivery"]:checked')?.value === 'delivery';
-        const deliveryFee = isDelivery ? Cart.getDeliveryFee() : 0;
+        const deliveryFee = isDelivery ? Cart.deliveryFee : 0;
         const total = subtotal + deliveryFee;
 
         subtotalEl.textContent = Utils.formatCurrency(subtotal);
@@ -241,8 +255,7 @@ const Cart = {
 
     // Obter taxa de entrega
     getDeliveryFee: () => {
-        const config = Utils.storage.get('appConfig') || {};
-        return config.deliveryFee || Cart.deliveryFee;
+        return Cart.deliveryFee;
     },
 
     // Limpar carrinho
@@ -284,7 +297,7 @@ function showPayment() {
     showPage('payment');
 }
 
-function finalizeOrder() {
+async function finalizeOrder() {
     if (Cart.items.length === 0) {
         Utils.showMessage('Seu carrinho está vazio!', 'error');
         return;
@@ -298,58 +311,69 @@ function finalizeOrder() {
 
     const orderSummary = Cart.getOrderSummary();
     
-    // Determinar endereço de entrega
-    let deliveryAddress = null;
-    if (orderSummary.isDelivery && orderSummary.selectedAddress) {
-        deliveryAddress = orderSummary.selectedAddress;
+    // Determinar dados do cliente para entrega
+    let customerData = {
+        name: currentUser.nome,
+        phone: currentUser.telefone,
+        email: currentUser.email,
+        address: currentUser.endereco,
+        number: currentUser.numero,
+        complement: currentUser.complemento || '',
+        city: currentUser.cidade
+    };
+    
+    if (orderSummary.isDelivery && orderSummary.selectedAddress && orderSummary.selectedAddress.id !== 'main') {
+        // Usar endereço selecionado
+        customerData = {
+            ...customerData,
+            address: orderSummary.selectedAddress.address,
+            number: orderSummary.selectedAddress.number,
+            complement: orderSummary.selectedAddress.complement || '',
+            city: orderSummary.selectedAddress.city
+        };
     }
     
-    // Criar pedido
-    const order = {
-        id: Utils.generateId(),
-        orderNumber: Utils.generateOrderNumber(),
-        userId: currentUser.id,
-        customer: {
-            name: currentUser.name,
-            phone: currentUser.phone,
-            email: currentUser.email,
-            address: deliveryAddress ? deliveryAddress.address : currentUser.address,
-            number: deliveryAddress ? deliveryAddress.number : currentUser.number,
-            complement: deliveryAddress ? deliveryAddress.complement : currentUser.complement,
-            city: deliveryAddress ? deliveryAddress.city : currentUser.city
-        },
-        items: orderSummary.items,
-        subtotal: orderSummary.subtotal,
-        deliveryFee: orderSummary.deliveryFee,
+    // Preparar dados do pedido para a API
+    const orderData = {
+        user_id: currentUser.id,
+        items: orderSummary.items.map(item => ({
+            id: item.id,
+            quantity: item.quantity || 1,
+            quantityType: item.quantityType,
+            unitCount: item.unitCount,
+            totalPrice: item.totalPrice
+        })),
         total: orderSummary.total,
-        isDelivery: orderSummary.isDelivery,
-        paymentMethod: orderSummary.paymentMethod,
-        status: 'pending',
-        statusHistory: [
-            {
-                status: 'pending',
-                timestamp: new Date().toISOString(),
-                description: 'Pedido recebido - Aguardando confirmação'
-            }
-        ],
-        createdAt: new Date().toISOString()
+        payment_method: orderSummary.paymentMethod === 'cash' ? 'dinheiro' : 
+                       orderSummary.paymentMethod === 'card' ? 'cartao' : 'pix',
+        is_delivery: orderSummary.isDelivery,
+        customer_data: customerData,
+        notes: ''
     };
 
-    // Salvar pedido
-    const orders = Utils.storage.get('orders') || [];
-    orders.push(order);
-    Utils.storage.set('orders', orders);
-
-    // Limpar carrinho
-    Cart.clearCart();
-
-    // Mostrar mensagem de sucesso
-    Utils.showMessage(`Pedido ${order.orderNumber} realizado com sucesso!`);
-    
-    // Redirecionar para histórico
-    setTimeout(() => {
-        showPage('historico');
-    }, 2000);
+    try {
+        Utils.showMessage('Finalizando pedido...', 'info');
+        
+        const response = await ApiClient.post(API_CONFIG.endpoints.createOrder, orderData);
+        
+        if (response.sucesso) {
+            // Limpar carrinho
+            Cart.clearCart();
+            
+            // Mostrar mensagem de sucesso
+            Utils.showMessage(`Pedido ${response.numero_pedido} realizado com sucesso!`);
+            
+            // Redirecionar para histórico
+            setTimeout(() => {
+                showPage('historico');
+            }, 2000);
+        } else {
+            Utils.showMessage(response.mensagem || 'Erro ao finalizar pedido', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao finalizar pedido:', error);
+        Utils.showMessage('Erro ao finalizar pedido. Tente novamente.', 'error');
+    }
 }
 
 // Inicializar carrinho quando DOM estiver carregado

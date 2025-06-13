@@ -17,8 +17,8 @@ const Admin = {
         if (!admin) return;
 
         // Ocultar seções baseado na função
-        if (admin.role === 'funcionario') {
-            // Funcionário só vê pedidos
+        if (admin.funcao === 'admin') {
+            // Admin só vê pedidos
             const restrictedSections = ['produtos', 'administradores', 'configuracoes'];
             restrictedSections.forEach(section => {
                 const btn = document.querySelector(`.admin-btn[onclick*="${section}"]`);
@@ -34,123 +34,135 @@ const Admin = {
     },
 
     // Carregar pedidos para o administrador
-    loadOrders: () => {
+    loadOrders: async () => {
         const ordersContainer = document.getElementById('admin-orders');
         if (!ordersContainer) return;
 
-        const orders = Utils.storage.get('orders') || [];
-        const sortedOrders = orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        try {
+            const response = await ApiClient.get(API_CONFIG.endpoints.orders);
+            
+            if (response.sucesso) {
+                const orders = response.dados;
+                const sortedOrders = orders.sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
 
-        if (sortedOrders.length === 0) {
+                if (sortedOrders.length === 0) {
+                    ordersContainer.innerHTML = `
+                        <div class="text-center">
+                            <h4>Nenhum pedido encontrado</h4>
+                            <p>Os pedidos aparecerão aqui quando forem realizados.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                ordersContainer.innerHTML = sortedOrders.map(order => `
+                    <div class="admin-order ${order.status}">
+                        <div class="order-header">
+                            <div class="order-id">${order.numero_pedido}</div>
+                            <div class="order-status ${order.status}">
+                                ${Admin.getStatusLabel(order.status)}
+                            </div>
+                        </div>
+                        
+                        <div class="order-details">
+                            <div class="order-customer">
+                                <div class="customer-info">
+                                    <strong>Cliente:</strong>
+                                    ${order.dados_cliente.name}
+                                </div>
+                                <div class="customer-info">
+                                    <strong>Telefone:</strong>
+                                    ${order.dados_cliente.phone}
+                                </div>
+                                <div class="customer-info">
+                                    <strong>Entrega:</strong>
+                                    ${order.eh_entrega ? 'Delivery' : 'Retirada'}
+                                </div>
+                                <div class="customer-info">
+                                    <strong>Pagamento:</strong>
+                                    ${Admin.getPaymentLabel(order.metodo_pagamento)}
+                                </div>
+                                <div class="customer-info">
+                                    <strong>Data:</strong>
+                                    ${Utils.formatDate(order.criado_em)}
+                                </div>
+                                <div class="customer-info">
+                                    <strong>Total:</strong>
+                                    ${Utils.formatCurrency(order.total)}
+                                </div>
+                            </div>
+                            
+                            <div class="order-items">
+                                <strong>Itens:</strong>
+                                ${order.itens.map(item => `
+                                    <div class="order-item">
+                                        <span>
+                                            ${item.quantity}x ${item.nome}
+                                            (${Utils.getQuantityLabel(item.quantityType, item.unitCount)})
+                                        </span>
+                                        <span>${Utils.formatCurrency(item.totalPrice)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="order-actions">
+                            ${order.status === 'pendente' ? `
+                                <button class="btn btn-success" onclick="Admin.updateOrderStatus('${order.id}', 'confirmado')">
+                                    Confirmar
+                                </button>
+                                <button class="btn btn-danger" onclick="Admin.showRejectModal('${order.id}')">
+                                    Recusar
+                                </button>
+                            ` : ''}
+                            
+                            ${order.status === 'confirmado' ? `
+                                <button class="btn btn-primary" onclick="Admin.updateOrderStatus('${order.id}', 'pronto')">
+                                    Pronto
+                                </button>
+                            ` : ''}
+                            
+                            ${order.status === 'pronto' ? `
+                                <button class="btn btn-success" onclick="Admin.updateOrderStatus('${order.id}', 'entregue')">
+                                    Entregue
+                                </button>
+                            ` : ''}
+                            
+                            ${order.status === 'rejeitado' && order.motivo_rejeicao ? `
+                                <div class="rejection-reason">
+                                    <strong>Motivo da recusa:</strong> ${order.motivo_rejeicao}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                ordersContainer.innerHTML = `
+                    <div class="text-center">
+                        <h4>Erro ao carregar pedidos</h4>
+                        <p>${response.mensagem}</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar pedidos:', error);
             ordersContainer.innerHTML = `
                 <div class="text-center">
-                    <h4>Nenhum pedido encontrado</h4>
-                    <p>Os pedidos aparecerão aqui quando forem realizados.</p>
+                    <h4>Erro ao carregar pedidos</h4>
+                    <p>Verifique sua conexão e tente novamente.</p>
                 </div>
             `;
-            return;
         }
-
-        ordersContainer.innerHTML = sortedOrders.map(order => `
-            <div class="admin-order ${order.status}">
-                <div class="order-header">
-                    <div class="order-id">${order.orderNumber}</div>
-                    <div class="order-status ${order.status}">
-                        ${Admin.getStatusLabel(order.status)}
-                    </div>
-                </div>
-                
-                <div class="order-details">
-                    <div class="order-customer">
-                        <div class="customer-info">
-                            <strong>Cliente:</strong>
-                            ${order.customer.name}
-                        </div>
-                        <div class="customer-info">
-                            <strong>Telefone:</strong>
-                            ${order.customer.phone}
-                        </div>
-                        <div class="customer-info">
-                            <strong>Entrega:</strong>
-                            ${order.isDelivery ? 'Delivery' : 'Retirada'}
-                        </div>
-                        <div class="customer-info">
-                            <strong>Pagamento:</strong>
-                            ${Admin.getPaymentLabel(order.paymentMethod)}
-                        </div>
-                        <div class="customer-info">
-                            <strong>Data:</strong>
-                            ${Utils.formatDate(order.createdAt)}
-                        </div>
-                        <div class="customer-info">
-                            <strong>Total:</strong>
-                            ${Utils.formatCurrency(order.total)}
-                        </div>
-                    </div>
-                    
-                    ${order.isDelivery ? `
-                        <div class="customer-info">
-                            <strong>Endereço:</strong>
-                            ${order.customer.address}, ${order.customer.number}
-                            ${order.customer.complement ? `, ${order.customer.complement}` : ''}
-                            - ${order.customer.city}
-                        </div>
-                    ` : ''}
-                    
-                    <div class="order-items">
-                        <strong>Itens:</strong>
-                        ${order.items.map(item => `
-                            <div class="order-item">
-                                <span>
-                                    ${item.quantity}x ${item.name}
-                                    (${Utils.getQuantityLabel(item.quantityType, item.unitCount)})
-                                </span>
-                                <span>${Utils.formatCurrency(item.totalPrice)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div class="order-actions">
-                    ${order.status === 'pending' ? `
-                        <button class="btn btn-success" onclick="Admin.updateOrderStatus('${order.id}', 'confirmed')">
-                            Confirmar
-                        </button>
-                        <button class="btn btn-danger" onclick="Admin.showRejectModal('${order.id}')">
-                            Recusar
-                        </button>
-                    ` : ''}
-                    
-                    ${order.status === 'confirmed' ? `
-                        <button class="btn btn-primary" onclick="Admin.updateOrderStatus('${order.id}', 'ready')">
-                            Pronto
-                        </button>
-                    ` : ''}
-                    
-                    ${order.status === 'ready' ? `
-                        <button class="btn btn-success" onclick="Admin.updateOrderStatus('${order.id}', 'delivered')">
-                            Entregue
-                        </button>
-                    ` : ''}
-                    
-                    ${order.status === 'rejected' && order.rejectionReason ? `
-                        <div class="rejection-reason">
-                            <strong>Motivo da recusa:</strong> ${order.rejectionReason}
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-        `).join('');
     },
 
     // Obter rótulo do status
     getStatusLabel: (status) => {
         const labels = {
-            'pending': 'Aguardando Confirmação',
-            'confirmed': 'Em Preparação',
-            'ready': 'Pronto',
-            'delivered': 'Entregue',
-            'rejected': 'Recusado'
+            'pendente': 'Aguardando Confirmação',
+            'confirmado': 'Em Preparação',
+            'pronto': 'Pronto',
+            'entregue': 'Entregue',
+            'rejeitado': 'Recusado'
         };
         return labels[status] || status;
     },
@@ -158,29 +170,30 @@ const Admin = {
     // Obter rótulo do pagamento
     getPaymentLabel: (method) => {
         const labels = {
-            'cash': 'Dinheiro',
-            'card': 'Cartão',
+            'dinheiro': 'Dinheiro',
+            'cartao': 'Cartão',
             'pix': 'PIX'
         };
         return labels[method] || method;
     },
 
     // Atualizar status do pedido
-    updateOrderStatus: (orderId, newStatus) => {
-        const orders = Utils.storage.get('orders') || [];
-        const orderIndex = orders.findIndex(order => order.id === orderId);
-        
-        if (orderIndex >= 0) {
-            orders[orderIndex].status = newStatus;
-            orders[orderIndex].statusHistory.push({
-                status: newStatus,
-                timestamp: new Date().toISOString(),
-                description: Admin.getStatusLabel(newStatus)
+    updateOrderStatus: async (orderId, newStatus) => {
+        try {
+            const response = await ApiClient.post(API_CONFIG.endpoints.updateOrderStatus, {
+                id: orderId,
+                status: newStatus
             });
             
-            Utils.storage.set('orders', orders);
-            Admin.loadOrders();
-            Utils.showMessage(`Pedido ${orders[orderIndex].orderNumber} atualizado para: ${Admin.getStatusLabel(newStatus)}`);
+            if (response.sucesso) {
+                Admin.loadOrders();
+                Utils.showMessage(`Pedido atualizado para: ${Admin.getStatusLabel(newStatus)}`);
+            } else {
+                Utils.showMessage(response.mensagem || 'Erro ao atualizar pedido', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar pedido:', error);
+            Utils.showMessage('Erro ao atualizar pedido. Tente novamente.', 'error');
         }
     },
 
@@ -212,59 +225,67 @@ const Admin = {
     },
 
     // Recusar pedido
-    rejectOrder: (orderId, reason, modal) => {
+    rejectOrder: async (orderId, reason, modal) => {
         if (!reason || reason.trim() === '') {
             Utils.showMessage('Por favor, informe o motivo da recusa!', 'error');
             return;
         }
 
-        const orders = Utils.storage.get('orders') || [];
-        const orderIndex = orders.findIndex(order => order.id === orderId);
-        
-        if (orderIndex >= 0) {
-            orders[orderIndex].status = 'rejected';
-            orders[orderIndex].rejectionReason = reason.trim();
-            orders[orderIndex].statusHistory.push({
-                status: 'rejected',
-                timestamp: new Date().toISOString(),
-                description: `Pedido recusado: ${reason.trim()}`
+        try {
+            const response = await ApiClient.post(API_CONFIG.endpoints.updateOrderStatus, {
+                id: orderId,
+                status: 'rejeitado',
+                rejection_reason: reason.trim()
             });
             
-            Utils.storage.set('orders', orders);
-            Admin.loadOrders();
-            Utils.showMessage(`Pedido ${orders[orderIndex].orderNumber} foi recusado.`);
-            modal.remove();
+            if (response.sucesso) {
+                Admin.loadOrders();
+                Utils.showMessage('Pedido foi recusado.');
+                modal.remove();
+            } else {
+                Utils.showMessage(response.mensagem || 'Erro ao recusar pedido', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao recusar pedido:', error);
+            Utils.showMessage('Erro ao recusar pedido. Tente novamente.', 'error');
         }
     },
 
     // Carregar produtos para o administrador
-    loadProducts: () => {
+    loadProducts: async () => {
         if (!Auth.hasAdminPermission('produtos')) return;
         
         const productsContainer = document.getElementById('admin-products');
         if (!productsContainer) return;
 
-        const customItems = Utils.storage.get('customMenuItems') || [];
-        const allItems = [...Menu.items, ...customItems];
+        try {
+            const response = await ApiClient.get(API_CONFIG.endpoints.products);
+            
+            if (response.sucesso) {
+                const products = response.dados;
 
-        productsContainer.innerHTML = allItems.map(item => `
-            <div class="admin-product">
-                <div class="product-info">
-                    <h4>${item.name}</h4>
-                    <div class="product-price">
-                        ${item.isPortioned ? Utils.formatCurrency(item.price) : Utils.formatCurrency(item.price) + ' / cento'}
+                productsContainer.innerHTML = products.map(item => `
+                    <div class="admin-product">
+                        <div class="product-info">
+                            <h4>${item.nome}</h4>
+                            <div class="product-price">
+                                ${item.eh_porcionado ? Utils.formatCurrency(item.preco) : Utils.formatCurrency(item.preco) + ' / cento'}
+                            </div>
+                            <div class="product-category">${Menu.getCategoryName(item.categoria)}</div>
+                            ${item.descricao ? `<p>${item.descricao}</p>` : ''}
+                        </div>
+                        <div class="product-actions">
+                            <button class="btn btn-secondary" onclick="Admin.editProduct(${item.id})">Editar</button>
+                            ${item.eh_personalizado ? `
+                                <button class="btn btn-danger" onclick="Admin.deleteProduct(${item.id})">Excluir</button>
+                            ` : ''}
+                        </div>
                     </div>
-                    <div class="product-category">${Menu.getCategoryName(item.category)}</div>
-                    ${item.description ? `<p>${item.description}</p>` : ''}
-                </div>
-                <div class="product-actions">
-                    <button class="btn btn-secondary" onclick="Admin.editProduct(${item.id})">Editar</button>
-                    ${item.id > 26 ? `
-                        <button class="btn btn-danger" onclick="Admin.deleteProduct(${item.id})">Excluir</button>
-                    ` : ''}
-                </div>
-            </div>
-        `).join('');
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar produtos:', error);
+        }
     },
 
     // Mostrar modal de adicionar produto
@@ -288,6 +309,10 @@ const Admin = {
                         <input type="text" id="product-name" name="name" required>
                     </div>
                     <div class="form-group">
+                        <label for="product-flavor">Sabor (opcional)</label>
+                        <input type="text" id="product-flavor" name="flavor">
+                    </div>
+                    <div class="form-group">
                         <label for="product-price">Preço (R$)</label>
                         <input type="number" id="product-price" name="price" step="0.01" min="0" required>
                     </div>
@@ -302,12 +327,8 @@ const Admin = {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="product-description">Descrição</label>
-                        <textarea id="product-description" name="description" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
                         <label>
-                            <input type="checkbox" name="isPortioned"> Item vendido por porção
+                            <input type="checkbox" name="is_portioned"> Item vendido por porção
                         </label>
                     </div>
                     <div class="form-actions">
@@ -322,46 +343,45 @@ const Admin = {
         modal.style.display = 'flex';
 
         // Manipular envio do formulário
-        modal.querySelector('#add-product-form').addEventListener('submit', (e) => {
+        modal.querySelector('#add-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             
             const newProduct = {
-                id: Date.now(),
                 name: formData.get('name'),
+                flavor: formData.get('flavor') || '',
                 price: parseFloat(formData.get('price')),
                 category: formData.get('category'),
-                description: formData.get('description'),
-                isPortioned: formData.has('isPortioned')
+                is_portioned: formData.has('is_portioned')
             };
 
-            const customItems = Utils.storage.get('customMenuItems') || [];
-            customItems.push(newProduct);
-            Utils.storage.set('customMenuItems', customItems);
-
-            Admin.loadProducts();
-            Utils.showMessage('Produto adicionado com sucesso!');
-            modal.remove();
+            try {
+                const response = await ApiClient.post(API_CONFIG.endpoints.createProduct, newProduct);
+                
+                if (response.sucesso) {
+                    Admin.loadProducts();
+                    Menu.loadMenuItems(); // Atualizar menu
+                    Utils.showMessage('Produto adicionado com sucesso!');
+                    modal.remove();
+                } else {
+                    Utils.showMessage(response.mensagem || 'Erro ao adicionar produto', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao adicionar produto:', error);
+                Utils.showMessage('Erro ao adicionar produto. Tente novamente.', 'error');
+            }
         });
     },
 
     // Editar produto
-    editProduct: (productId) => {
+    editProduct: async (productId) => {
         if (!Auth.hasAdminPermission('produtos')) {
             Utils.showMessage('Você não tem permissão para esta ação!', 'error');
             return;
         }
         
-        // Encontrar produto nos itens padrão e customizados
-        let product = Menu.items.find(item => item.id === productId);
-        let isCustomProduct = false;
-        
-        if (!product) {
-            const customItems = Utils.storage.get('customMenuItems') || [];
-            product = customItems.find(item => item.id === productId);
-            isCustomProduct = true;
-        }
-        
+        // Encontrar produto
+        const product = Menu.items.find(item => item.id === productId);
         if (!product) return;
 
         const modal = document.createElement('div');
@@ -375,29 +395,29 @@ const Admin = {
                 <form id="edit-product-form">
                     <div class="form-group">
                         <label for="edit-product-name">Nome do Produto</label>
-                        <input type="text" id="edit-product-name" name="name" value="${product.name}" required>
+                        <input type="text" id="edit-product-name" name="name" value="${product.nome}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-product-flavor">Sabor (opcional)</label>
+                        <input type="text" id="edit-product-flavor" name="flavor" value="${product.sabor || ''}">
                     </div>
                     <div class="form-group">
                         <label for="edit-product-price">Preço (R$)</label>
-                        <input type="number" id="edit-product-price" name="price" value="${product.price}" step="0.01" min="0" required>
+                        <input type="number" id="edit-product-price" name="price" value="${product.preco}" step="0.01" min="0" required>
                     </div>
                     <div class="form-group">
                         <label for="edit-product-category">Categoria</label>
                         <select id="edit-product-category" name="category" required>
-                            <option value="salgados" ${product.category === 'salgados' ? 'selected' : ''}>Salgados Fritos</option>
-                            <option value="sortidos" ${product.category === 'sortidos' ? 'selected' : ''}>Sortidos</option>
-                            <option value="assados" ${product.category === 'assados' ? 'selected' : ''}>Assados</option>
-                            <option value="especiais" ${product.category === 'especiais' ? 'selected' : ''}>Especiais</option>
-                            <option value="opcionais" ${product.category === 'opcionais' ? 'selected' : ''}>Opcionais</option>
+                            <option value="salgados" ${product.categoria === 'salgados' ? 'selected' : ''}>Salgados Fritos</option>
+                            <option value="sortidos" ${product.categoria === 'sortidos' ? 'selected' : ''}>Sortidos</option>
+                            <option value="assados" ${product.categoria === 'assados' ? 'selected' : ''}>Assados</option>
+                            <option value="especiais" ${product.categoria === 'especiais' ? 'selected' : ''}>Especiais</option>
+                            <option value="opcionais" ${product.categoria === 'opcionais' ? 'selected' : ''}>Opcionais</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="edit-product-description">Descrição</label>
-                        <textarea id="edit-product-description" name="description" rows="3">${product.description || ''}</textarea>
-                    </div>
-                    <div class="form-group">
                         <label>
-                            <input type="checkbox" name="isPortioned" ${product.isPortioned ? 'checked' : ''}> Item vendido por porção
+                            <input type="checkbox" name="is_portioned" ${product.eh_porcionado ? 'checked' : ''}> Item vendido por porção
                         </label>
                     </div>
                     <div class="form-actions">
@@ -412,99 +432,96 @@ const Admin = {
         modal.style.display = 'flex';
 
         // Manipular envio do formulário
-        modal.querySelector('#edit-product-form').addEventListener('submit', (e) => {
+        modal.querySelector('#edit-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             
-            if (isCustomProduct) {
-                // Editar produto customizado
-                const customItems = Utils.storage.get('customMenuItems') || [];
-                const productIndex = customItems.findIndex(item => item.id === productId);
-                if (productIndex >= 0) {
-                    customItems[productIndex] = {
-                        ...customItems[productIndex],
-                        name: formData.get('name'),
-                        price: parseFloat(formData.get('price')),
-                        category: formData.get('category'),
-                        description: formData.get('description'),
-                        isPortioned: formData.has('isPortioned')
-                    };
-                    Utils.storage.set('customMenuItems', customItems);
-                }
-            } else {
-                // Editar produto padrão - salvar como override
-                const defaultProductOverrides = Utils.storage.get('defaultProductOverrides') || {};
-                defaultProductOverrides[productId] = {
-                    name: formData.get('name'),
-                    price: parseFloat(formData.get('price')),
-                    category: formData.get('category'),
-                    description: formData.get('description'),
-                    isPortioned: formData.has('isPortioned')
-                };
-                Utils.storage.set('defaultProductOverrides', defaultProductOverrides);
-                
-                // Atualizar o array Menu.items
-                const itemIndex = Menu.items.findIndex(item => item.id === productId);
-                if (itemIndex >= 0) {
-                    Menu.items[itemIndex] = {
-                        ...Menu.items[itemIndex],
-                        name: formData.get('name'),
-                        price: parseFloat(formData.get('price')),
-                        category: formData.get('category'),
-                        description: formData.get('description'),
-                        isPortioned: formData.has('isPortioned')
-                    };
-                }
-            }
+            const updatedProduct = {
+                id: productId,
+                name: formData.get('name'),
+                flavor: formData.get('flavor') || '',
+                price: parseFloat(formData.get('price')),
+                category: formData.get('category'),
+                is_portioned: formData.has('is_portioned')
+            };
 
-            Admin.loadProducts();
-            Menu.loadMenuItems(); // Atualizar menu para mostrar produtos atualizados
-            Utils.showMessage('Produto atualizado com sucesso!');
-            modal.remove();
+            try {
+                const response = await ApiClient.post(API_CONFIG.endpoints.updateProduct, updatedProduct);
+                
+                if (response.sucesso) {
+                    Admin.loadProducts();
+                    Menu.loadMenuItems(); // Atualizar menu
+                    Utils.showMessage('Produto atualizado com sucesso!');
+                    modal.remove();
+                } else {
+                    Utils.showMessage(response.mensagem || 'Erro ao atualizar produto', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar produto:', error);
+                Utils.showMessage('Erro ao atualizar produto. Tente novamente.', 'error');
+            }
         });
     },
 
     // Excluir produto
-    deleteProduct: (productId) => {
+    deleteProduct: async (productId) => {
         if (!Auth.hasAdminPermission('produtos')) {
             Utils.showMessage('Você não tem permissão para esta ação!', 'error');
             return;
         }
         
         if (confirm('Tem certeza que deseja excluir este produto?')) {
-            const customItems = Utils.storage.get('customMenuItems') || [];
-            const filteredItems = customItems.filter(item => item.id !== productId);
-            Utils.storage.set('customMenuItems', filteredItems);
-            
-            Admin.loadProducts();
-            Utils.showMessage('Produto excluído com sucesso!');
+            try {
+                const response = await ApiClient.delete(API_CONFIG.endpoints.deleteProduct, {
+                    id: productId
+                });
+                
+                if (response.sucesso) {
+                    Admin.loadProducts();
+                    Menu.loadMenuItems(); // Atualizar menu
+                    Utils.showMessage('Produto excluído com sucesso!');
+                } else {
+                    Utils.showMessage(response.mensagem || 'Erro ao excluir produto', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao excluir produto:', error);
+                Utils.showMessage('Erro ao excluir produto. Tente novamente.', 'error');
+            }
         }
     },
 
     // Carregar administradores
-    loadAdmins: () => {
+    loadAdmins: async () => {
         if (!Auth.hasAdminPermission('administradores')) return;
         
         const adminsContainer = document.getElementById('admin-admins');
         if (!adminsContainer) return;
 
-        const admins = Utils.storage.get('adminUsers') || [];
+        try {
+            const response = await ApiClient.get(API_CONFIG.endpoints.admins);
+            
+            if (response.sucesso) {
+                const admins = response.dados;
 
-        adminsContainer.innerHTML = admins.map(admin => `
-            <div class="admin-admin">
-                <div class="admin-info">
-                    <h4>${admin.username}</h4>
-                    <div class="admin-role">${admin.role === 'gerente' ? 'Gerente' : 'Funcionário'}</div>
-                </div>
-                <div class="admin-actions">
-                    ${admin.username !== 'sara' ? `
-                        <button class="btn btn-danger" onclick="Admin.deleteAdmin('${admin.id}')">Excluir</button>
-                    ` : `
-                        <small>Administrador principal</small>
-                    `}
-                </div>
-            </div>
-        `).join('');
+                adminsContainer.innerHTML = admins.map(admin => `
+                    <div class="admin-admin">
+                        <div class="admin-info">
+                            <h4>${admin.nome_usuario}</h4>
+                            <div class="admin-role">${admin.funcao === 'super_admin' ? 'Super Admin' : 'Admin'}</div>
+                        </div>
+                        <div class="admin-actions">
+                            ${admin.nome_usuario !== 'sara' ? `
+                                <button class="btn btn-danger" onclick="Admin.deleteAdmin('${admin.id}')">Excluir</button>
+                            ` : `
+                                <small>Administrador principal</small>
+                            `}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar administradores:', error);
+        }
     },
 
     // Mostrar modal de adicionar administrador
@@ -534,8 +551,8 @@ const Admin = {
                     <div class="form-group">
                         <label for="admin-role">Função</label>
                         <select id="admin-role" name="role" required>
-                            <option value="gerente">Gerente</option>
-                            <option value="funcionario">Funcionário</option>
+                            <option value="super_admin">Super Admin</option>
+                            <option value="admin">Admin</option>
                         </select>
                     </div>
                     <div class="form-actions">
@@ -550,65 +567,78 @@ const Admin = {
         modal.style.display = 'flex';
 
         // Manipular envio do formulário
-        modal.querySelector('#add-admin-form').addEventListener('submit', (e) => {
+        modal.querySelector('#add-admin-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             
             const newAdmin = {
-                id: Utils.generateId(),
                 username: formData.get('username'),
                 password: formData.get('password'),
-                role: formData.get('role'),
-                createdAt: new Date().toISOString()
+                role: formData.get('role')
             };
 
-            const admins = Utils.storage.get('adminUsers') || [];
-            
-            // Verificar se o nome de usuário já existe
-            if (admins.find(admin => admin.username === newAdmin.username)) {
-                Utils.showMessage('Nome de usuário já existe!', 'error');
-                return;
+            try {
+                const response = await ApiClient.post(API_CONFIG.endpoints.admins, newAdmin);
+                
+                if (response.sucesso) {
+                    Admin.loadAdmins();
+                    Utils.showMessage('Administrador adicionado com sucesso!');
+                    modal.remove();
+                } else {
+                    Utils.showMessage(response.mensagem || 'Erro ao adicionar administrador', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao adicionar administrador:', error);
+                Utils.showMessage('Erro ao adicionar administrador. Tente novamente.', 'error');
             }
-
-            admins.push(newAdmin);
-            Utils.storage.set('adminUsers', admins);
-
-            Admin.loadAdmins();
-            Utils.showMessage('Administrador adicionado com sucesso!');
-            modal.remove();
         });
     },
 
     // Excluir administrador
-    deleteAdmin: (adminId) => {
+    deleteAdmin: async (adminId) => {
         if (!Auth.hasAdminPermission('administradores')) {
             Utils.showMessage('Você não tem permissão para esta ação!', 'error');
             return;
         }
         
         if (confirm('Tem certeza que deseja excluir este administrador?')) {
-            const admins = Utils.storage.get('adminUsers') || [];
-            const filteredAdmins = admins.filter(admin => admin.id !== adminId);
-            Utils.storage.set('adminUsers', filteredAdmins);
-            
-            Admin.loadAdmins();
-            Utils.showMessage('Administrador excluído com sucesso!');
+            try {
+                const response = await ApiClient.delete(API_CONFIG.endpoints.admins, {
+                    id: adminId
+                });
+                
+                if (response.sucesso) {
+                    Admin.loadAdmins();
+                    Utils.showMessage('Administrador excluído com sucesso!');
+                } else {
+                    Utils.showMessage(response.mensagem || 'Erro ao excluir administrador', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao excluir administrador:', error);
+                Utils.showMessage('Erro ao excluir administrador. Tente novamente.', 'error');
+            }
         }
     },
 
     // Carregar configuração
-    loadConfig: () => {
+    loadConfig: async () => {
         if (!Auth.hasAdminPermission('configuracoes')) return;
         
         const deliveryPriceInput = document.getElementById('delivery-price');
         if (!deliveryPriceInput) return;
 
-        const config = Utils.storage.get('appConfig') || {};
-        deliveryPriceInput.value = config.deliveryFee || 10.00;
+        try {
+            const response = await ApiClient.get(`${API_CONFIG.endpoints.config}?key=taxa_entrega`);
+            if (response.sucesso && response.dados.taxa_entrega) {
+                deliveryPriceInput.value = response.dados.taxa_entrega;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar configuração:', error);
+        }
     },
 
     // Atualizar preço da entrega
-    updateDeliveryPrice: () => {
+    updateDeliveryPrice: async () => {
         if (!Auth.hasAdminPermission('configuracoes')) {
             Utils.showMessage('Você não tem permissão para esta ação!', 'error');
             return;
@@ -617,11 +647,22 @@ const Admin = {
         const deliveryPriceInput = document.getElementById('delivery-price');
         const newPrice = parseFloat(deliveryPriceInput.value) || 0;
 
-        const config = Utils.storage.get('appConfig') || {};
-        config.deliveryFee = newPrice;
-        Utils.storage.set('appConfig', config);
-
-        Utils.showMessage('Valor da entrega atualizado com sucesso!');
+        try {
+            const response = await ApiClient.post(API_CONFIG.endpoints.config, {
+                key: 'taxa_entrega',
+                value: newPrice
+            });
+            
+            if (response.sucesso) {
+                Utils.showMessage('Valor da entrega atualizado com sucesso!');
+                Cart.deliveryFee = newPrice; // Atualizar cache local
+            } else {
+                Utils.showMessage(response.mensagem || 'Erro ao atualizar configuração', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar configuração:', error);
+            Utils.showMessage('Erro ao atualizar configuração. Tente novamente.', 'error');
+        }
     }
 };
 

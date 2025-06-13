@@ -26,8 +26,7 @@ const Utils = {
 
     // Gerar número do pedido
     generateOrderNumber: () => {
-        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-        const orderNumber = orders.length + 1;
+        const orderNumber = Math.floor(Math.random() * 1000) + 1;
         const date = new Date().toLocaleDateString('pt-BR').replace(/\//g, '');
         return `#${orderNumber.toString().padStart(3, '0')}-${date}`;
     },
@@ -114,6 +113,8 @@ const Utils = {
                 return price / 2;
             case 'unidade':
                 return (price / 100) * unitCount;
+            case 'porção':
+                return price;
             default:
                 return price;
         }
@@ -128,6 +129,8 @@ const Utils = {
                 return 'Meio Cento';
             case 'unidade':
                 return `${unitCount} unidades`;
+            case 'porção':
+                return 'Porção';
             default:
                 return 'Cento';
         }

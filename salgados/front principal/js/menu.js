@@ -1,79 +1,44 @@
 // Menu Module
 const Menu = {
-    // Menu items data
-    items: [
-        // SALGADOS FRITOS
-        { id: 1, name: 'Bolinha de queijo', price: 110.00, category: 'salgados', description: 'Deliciosas bolinhas de queijo douradas' },
-        { id: 2, name: 'Coxinha frango', price: 110.00, category: 'salgados', description: 'Coxinha tradicional de frango' },
-        { id: 3, name: 'Coxinha brócolis/queijo', price: 110.00, category: 'salgados', description: 'Coxinha especial de brócolis com queijo' },
-        { id: 4, name: 'Bombinha calabresa/queijo', price: 110.00, category: 'salgados', description: 'Bombinha recheada com calabresa e queijo' },
-        { id: 5, name: 'Enroladinho de salsicha', price: 110.00, category: 'salgados', description: 'Massa crocante envolvendo salsicha' },
-        { id: 6, name: 'Croquetes', price: 110.00, category: 'salgados', description: 'Croquetes dourados e crocantes' },
-        { id: 7, name: 'Pastel simples (gado/frango/queijo)', price: 100.00, category: 'salgados', description: 'Pastel tradicional com recheios variados' },
-        { id: 8, name: 'Travesseirinho de gado', price: 110.00, category: 'salgados', description: 'Travesseirinho recheado com carne' },
-        { id: 9, name: 'Risoles de gado', price: 120.00, category: 'salgados', description: 'Risoles cremosos de carne' },
-        { id: 10, name: 'Risoles frango', price: 120.00, category: 'salgados', description: 'Risoles cremosos de frango' },
-        
-        // SORTIDOS
-        { id: 11, name: 'Barquetes (legumes ou frango)', price: 180.00, category: 'sortidos', description: 'Barquetes delicados com recheios especiais' },
-        { id: 12, name: 'Canudinhos (legumes ou frango)', price: 120.00, category: 'sortidos', description: 'Canudinhos crocantes com recheio saboroso' },
-        { id: 13, name: 'Torradinhas', price: 170.00, category: 'sortidos', description: 'Torradinhas douradas e temperadas' },
-        { id: 14, name: 'Espetinho', price: 180.00, category: 'sortidos', description: 'Espetinhos variados para petiscar' },
-        { id: 15, name: 'Mini Pizza', price: 160.00, category: 'sortidos', description: 'Mini pizzas com coberturas diversas' },
-        { id: 16, name: 'Mini Sanduíches', price: 160.00, category: 'sortidos', description: 'Mini sanduíches perfeitos para festas' },
-        
-        // ASSADOS
-        { id: 17, name: 'Presunto e Queijo', price: 160.00, category: 'assados', description: 'Salgado assado com presunto e queijo' },
-        { id: 18, name: 'Gado', price: 160.00, category: 'assados', description: 'Salgado assado com recheio de carne' },
-        { id: 19, name: 'Frango', price: 160.00, category: 'assados', description: 'Salgado assado com recheio de frango' },
-        { id: 20, name: 'Legumes', price: 160.00, category: 'assados', description: 'Salgado assado com mix de legumes' },
-        { id: 21, name: 'Brócolis c/ Ricota', price: 160.00, category: 'assados', description: 'Salgado assado com brócolis e ricota' },
-        { id: 22, name: 'Palmito', price: 160.00, category: 'assados', description: 'Salgado assado com palmito' },
-        
-        // ESPECIAIS
-        { id: 23, name: 'Mini Cachorro Quente', price: 220.00, category: 'especiais', description: 'Mini hot dogs completos' },
-        { id: 24, name: 'Mini Hambúrguer', price: 220.00, category: 'especiais', description: 'Mini hambúrgueres gourmet' },
-        { id: 25, name: 'Empadinhas', price: 200.00, category: 'especiais', description: 'Empadinhas tradicionais com recheios variados' },
-        
-        // OPCIONAIS
-        { id: 26, name: 'Batata Frita (Porção)', price: 6.50, category: 'opcionais', description: 'Porção de batata frita sequinha', isPortioned: true }
-    ],
-
+    // Menu items data (cache local)
+    items: [],
     currentFilter: 'todos',
     currentItem: null,
 
     // Initialize menu
     init: () => {
-        // Load product overrides
-        Menu.loadProductOverrides();
         Menu.loadMenuItems();
         Menu.setupQuantityModal();
     },
 
-    // Load product overrides from admin
-    loadProductOverrides: () => {
-        const productOverrides = Utils.storage.get('defaultProductOverrides') || {};
-        Menu.items.forEach(item => {
-            if (productOverrides[item.id]) {
-                // Apply all overrides
-                Object.assign(item, productOverrides[item.id]);
+    // Load menu items from API
+    loadMenuItems: async () => {
+        try {
+            const response = await ApiClient.get(API_CONFIG.endpoints.products);
+            
+            if (response.sucesso) {
+                Menu.items = response.dados;
+                Menu.renderMenuItems();
+            } else {
+                console.error('Erro ao carregar produtos:', response.mensagem);
+                Menu.renderMenuItems(); // Renderizar vazio
             }
-        });
+        } catch (error) {
+            console.error('Erro ao carregar menu:', error);
+            Utils.showMessage('Erro ao carregar cardápio. Tente novamente.', 'error');
+            Menu.renderMenuItems(); // Renderizar vazio
+        }
     },
 
-    // Load menu items
-    loadMenuItems: () => {
+    // Render menu items
+    renderMenuItems: () => {
         const menuItemsEl = document.getElementById('menu-items');
         if (!menuItemsEl) return;
 
-        // Get custom items from localStorage
-        const customItems = Utils.storage.get('customMenuItems') || [];
-        const allItems = [...Menu.items, ...customItems];
-
         // Filter items
         const filteredItems = Menu.currentFilter === 'todos' 
-            ? allItems 
-            : allItems.filter(item => item.category === Menu.currentFilter);
+            ? Menu.items 
+            : Menu.items.filter(item => item.categoria === Menu.currentFilter);
 
         if (filteredItems.length === 0) {
             menuItemsEl.innerHTML = `
@@ -87,12 +52,12 @@ const Menu = {
 
         menuItemsEl.innerHTML = filteredItems.map(item => `
             <div class="menu-item" onclick="Menu.selectItem(${item.id})">
-                <h3>${item.name}</h3>
+                <h3>${item.nome}</h3>
                 <div class="price">
-                    ${item.isPortioned ? Utils.formatCurrency(item.price) : Utils.formatCurrency(item.price) + ' / cento'}
+                    ${item.eh_porcionado ? Utils.formatCurrency(item.preco) : Utils.formatCurrency(item.preco) + ' / cento'}
                 </div>
-                <div class="category">${Menu.getCategoryName(item.category)}</div>
-                ${item.description ? `<div class="description">${item.description}</div>` : ''}
+                <div class="category">${Menu.getCategoryName(item.categoria)}</div>
+                ${item.descricao ? `<div class="description">${item.descricao}</div>` : ''}
             </div>
         `).join('');
     },
@@ -119,7 +84,7 @@ const Menu = {
         });
         event.target.classList.add('active');
         
-        Menu.loadMenuItems();
+        Menu.renderMenuItems();
     },
 
     // Select menu item
@@ -131,21 +96,18 @@ const Menu = {
             return;
         }
 
-        const customItems = Utils.storage.get('customMenuItems') || [];
-        const allItems = [...Menu.items, ...customItems];
-        
-        Menu.currentItem = allItems.find(item => item.id === itemId);
+        Menu.currentItem = Menu.items.find(item => item.id === itemId);
         
         if (Menu.currentItem) {
-            if (Menu.currentItem.isPortioned) {
+            if (Menu.currentItem.eh_porcionado) {
                 // For portioned items, add directly to cart
                 Cart.addItem({
                     ...Menu.currentItem,
                     quantityType: 'porção',
                     unitCount: 1,
-                    totalPrice: Menu.currentItem.price
+                    totalPrice: Menu.currentItem.preco
                 });
-                Utils.showMessage(`${Menu.currentItem.name} adicionado ao carrinho!`);
+                Utils.showMessage(`${Menu.currentItem.nome} adicionado ao carrinho!`);
             } else {
                 Menu.showQuantityModal();
             }
@@ -165,12 +127,12 @@ const Menu = {
         const unitCount = document.getElementById('unit-count');
 
         // Set item name
-        itemName.textContent = Menu.currentItem.name;
+        itemName.textContent = Menu.currentItem.nome;
 
         // Set prices
-        priceCento.textContent = Utils.formatCurrency(Menu.currentItem.price);
-        priceMeioCento.textContent = Utils.formatCurrency(Menu.currentItem.price / 2);
-        priceUnidade.textContent = Utils.formatCurrency(Menu.currentItem.price / 100);
+        priceCento.textContent = Utils.formatCurrency(Menu.currentItem.preco);
+        priceMeioCento.textContent = Utils.formatCurrency(Menu.currentItem.preco / 2);
+        priceUnidade.textContent = Utils.formatCurrency(Menu.currentItem.preco / 100);
 
         // Reset form
         document.querySelector('input[name="quantity-type"][value="cento"]').checked = true;
@@ -223,7 +185,7 @@ function filterMenu(category) {
         activeBtn.classList.add('active');
     }
     
-    Menu.loadMenuItems();
+    Menu.renderMenuItems();
 }
 
 function closeModal() {
@@ -241,14 +203,14 @@ function addToCart() {
         ...Menu.currentItem,
         quantityType: quantityType,
         unitCount: quantityType === 'unidade' ? unitCount : 1,
-        totalPrice: Utils.calculateItemPrice(Menu.currentItem.price, quantityType, unitCount)
+        totalPrice: Utils.calculateItemPrice(Menu.currentItem.preco, quantityType, unitCount)
     };
 
     Cart.addItem(cartItem);
     closeModal();
     
     const quantityLabel = Utils.getQuantityLabel(quantityType, unitCount);
-    Utils.showMessage(`${Menu.currentItem.name} (${quantityLabel}) adicionado ao carrinho!`);
+    Utils.showMessage(`${Menu.currentItem.nome} (${quantityLabel}) adicionado ao carrinho!`);
 }
 
 // Initialize menu when DOM is loaded

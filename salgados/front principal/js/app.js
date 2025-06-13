@@ -150,62 +150,80 @@ const History = {
     },
 
     // Load user's order history
-    loadHistory: () => {
+    loadHistory: async () => {
         const historyContainer = document.getElementById('history-items');
         if (!historyContainer) return;
 
         const currentUser = Auth.getCurrentUser();
         if (!currentUser) return;
 
-        const orders = Utils.storage.get('orders') || [];
-        const userOrders = orders
-            .filter(order => order.userId === currentUser.id)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        try {
+            const response = await ApiClient.get(`${API_CONFIG.endpoints.orders}?user_id=${currentUser.id}`);
+            
+            if (response.sucesso) {
+                const userOrders = response.dados.sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
 
-        if (userOrders.length === 0) {
+                if (userOrders.length === 0) {
+                    historyContainer.innerHTML = `
+                        <div class="history-empty">
+                            <h3>Nenhum pedido encontrado</h3>
+                            <p>Você ainda não fez nenhum pedido. Que tal dar uma olhada no nosso cardápio?</p>
+                            <button class="btn btn-primary" onclick="showPage('cardapio')">Ver Cardápio</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                historyContainer.innerHTML = userOrders.map(order => `
+                    <div class="history-item">
+                        <div class="history-item-header">
+                            <div class="history-order-id">${order.numero_pedido}</div>
+                            <div class="history-date">${Utils.formatDate(order.criado_em)}</div>
+                            <div class="history-status ${order.status}">
+                                ${Admin.getStatusLabel(order.status)}
+                            </div>
+                        </div>
+                        
+                        <div class="history-items-list">
+                            ${order.itens.map(item => `
+                                <div class="order-item">
+                                    <span>
+                                        ${item.quantity}x ${item.nome}
+                                        (${Utils.getQuantityLabel(item.quantityType, item.unitCount)})
+                                    </span>
+                                    <span>${Utils.formatCurrency(item.totalPrice)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="history-total">
+                            Total: ${Utils.formatCurrency(order.total)}
+                        </div>
+                        
+                        ${order.status === 'rejeitado' && order.motivo_rejeicao ? `
+                            <div class="rejection-reason">
+                                <strong>Motivo da recusa:</strong> ${order.motivo_rejeicao}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } else {
+                historyContainer.innerHTML = `
+                    <div class="history-empty">
+                        <h3>Erro ao carregar histórico</h3>
+                        <p>${response.mensagem}</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar histórico:', error);
             historyContainer.innerHTML = `
                 <div class="history-empty">
-                    <h3>Nenhum pedido encontrado</h3>
-                    <p>Você ainda não fez nenhum pedido. Que tal dar uma olhada no nosso cardápio?</p>
-                    <button class="btn btn-primary" onclick="showPage('cardapio')">Ver Cardápio</button>
+                    <h3>Erro ao carregar histórico</h3>
+                    <p>Verifique sua conexão e tente novamente.</p>
                 </div>
             `;
-            return;
         }
-
-        historyContainer.innerHTML = userOrders.map(order => `
-            <div class="history-item">
-                <div class="history-item-header">
-                    <div class="history-order-id">${order.orderNumber}</div>
-                    <div class="history-date">${Utils.formatDate(order.createdAt)}</div>
-                    <div class="history-status ${order.status}">
-                        ${Admin.getStatusLabel(order.status)}
-                    </div>
-                </div>
-                
-                <div class="history-items-list">
-                    ${order.items.map(item => `
-                        <div class="order-item">
-                            <span>
-                                ${item.quantity}x ${item.name}
-                                (${Utils.getQuantityLabel(item.quantityType, item.unitCount)})
-                            </span>
-                            <span>${Utils.formatCurrency(item.totalPrice)}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div class="history-total">
-                    Total: ${Utils.formatCurrency(order.total)}
-                </div>
-                
-                ${order.status === 'rejected' && order.rejectionReason ? `
-                    <div class="rejection-reason">
-                        <strong>Motivo da recusa:</strong> ${order.rejectionReason}
-                    </div>
-                ` : ''}
-            </div>
-        `).join('');
     }
 };
 

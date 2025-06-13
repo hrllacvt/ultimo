@@ -1,42 +1,9 @@
 // Authentication Module
 const Auth = {
-    // Initialize default users
+    // Initialize default users (manter para fallback)
     init: () => {
-        const users = Utils.storage.get('users') || [];
-        if (users.length === 0) {
-            // Create default admin user
-            const defaultUsers = [
-                {
-                    id: Utils.generateId(),
-                    name: 'Administrador',
-                    phone: '(00) 00000-0000',
-                    email: 'admin@salgadosdasara.com',
-                    address: 'Rua Ida Berlet, 1738 B',
-                    number: '1738',
-                    complement: 'B',
-                    city: 'Quinze de Novembro',
-                    password: 'Admin123!',
-                    isAdmin: true,
-                    createdAt: new Date().toISOString()
-                }
-            ];
-            Utils.storage.set('users', defaultUsers);
-        }
-
-        // Initialize admin users
-        const adminUsers = Utils.storage.get('adminUsers') || [];
-        if (adminUsers.length === 0) {
-            const defaultAdmins = [
-                {
-                    id: Utils.generateId(),
-                    username: 'sara',
-                    password: '123',
-                    role: 'gerente',
-                    createdAt: new Date().toISOString()
-                }
-            ];
-            Utils.storage.set('adminUsers', defaultAdmins);
-        }
+        // Não precisamos mais inicializar usuários locais
+        // O backend já tem os dados necessários
     },
 
     // Validate password strength
@@ -67,28 +34,26 @@ const Auth = {
     },
 
     // Login user
-    login: (phone, password) => {
-        const users = Utils.storage.get('users') || [];
-        const user = users.find(u => u.phone === phone && u.password === password);
-        
-        if (user) {
-            Utils.storage.set('currentUser', user);
-            return { success: true, user };
+    login: async (phone, password) => {
+        try {
+            const response = await ApiClient.post(API_CONFIG.endpoints.login, {
+                phone: phone,
+                password: password
+            });
+            
+            if (response.sucesso) {
+                Utils.storage.set('currentUser', response.usuario);
+                return { success: true, user: response.usuario };
+            } else {
+                return { success: false, message: response.mensagem };
+            }
+        } catch (error) {
+            return { success: false, message: error.message || 'Erro ao fazer login' };
         }
-        
-        return { success: false, message: 'Telefone ou senha incorretos' };
     },
 
     // Register user
-    register: (userData) => {
-        const users = Utils.storage.get('users') || [];
-        
-        // Check if user already exists
-        const existingUser = users.find(u => u.phone === userData.phone || u.email === userData.email);
-        if (existingUser) {
-            return { success: false, message: 'Usuário já cadastrado com este telefone ou email' };
-        }
-
+    register: async (userData) => {
         // Validate password strength
         const passwordErrors = Auth.validatePassword(userData.password);
         if (passwordErrors.length > 0) {
@@ -123,56 +88,71 @@ const Auth = {
             return { success: false, message: 'Email inválido' };
         }
 
-        // Create new user
-        const newUser = {
-            id: Utils.generateId(),
-            name: userData.name.trim(),
-            phone: Utils.formatPhone(userData.phone),
-            email: userData.email.trim(),
-            address: userData.address.trim(),
-            number: userData.number.trim(),
-            complement: userData.complement ? userData.complement.trim() : '',
-            city: userData.city,
-            password: userData.password,
-            isAdmin: false,
-            createdAt: new Date().toISOString()
-        };
+        try {
+            const response = await ApiClient.post(API_CONFIG.endpoints.register, {
+                name: userData.name.trim(),
+                phone: Utils.formatPhone(userData.phone),
+                email: userData.email.trim(),
+                address: userData.address.trim(),
+                number: userData.number.trim(),
+                complement: userData.complement ? userData.complement.trim() : '',
+                neighborhood: userData.neighborhood || '',
+                cep: userData.cep || '',
+                city: userData.city,
+                password: userData.password,
+                confirmPassword: userData.confirmPassword
+            });
 
-        users.push(newUser);
-        Utils.storage.set('users', users);
-        Utils.storage.set('currentUser', newUser);
-
-        return { success: true, user: newUser };
+            if (response.sucesso) {
+                Utils.storage.set('currentUser', response.usuario);
+                return { success: true, user: response.usuario };
+            } else {
+                // Se há erros específicos por campo
+                if (response.erros) {
+                    const errorMessages = Object.values(response.erros);
+                    return { success: false, message: errorMessages.join('. ') };
+                }
+                return { success: false, message: response.mensagem };
+            }
+        } catch (error) {
+            return { success: false, message: error.message || 'Erro ao criar conta' };
+        }
     },
 
     // Forgot password
-    forgotPassword: (phone) => {
-        const users = Utils.storage.get('users') || [];
-        const user = users.find(u => u.phone === phone);
-        
-        if (user) {
-            // In a real app, this would send an email/SMS
-            // For demo purposes, we'll just show the password
-            return { 
-                success: true, 
-                message: `Sua senha é: ${user.password}` 
-            };
+    forgotPassword: async (phone) => {
+        try {
+            const response = await ApiClient.post(API_CONFIG.endpoints.forgotPassword, {
+                phone: phone
+            });
+            
+            if (response.sucesso) {
+                return { success: true, message: response.mensagem };
+            } else {
+                return { success: false, message: response.mensagem };
+            }
+        } catch (error) {
+            return { success: false, message: error.message || 'Erro ao recuperar senha' };
         }
-        
-        return { success: false, message: 'Usuário não encontrado' };
     },
 
     // Admin login
-    adminLogin: (username, password) => {
-        const adminUsers = Utils.storage.get('adminUsers') || [];
-        const admin = adminUsers.find(a => a.username === username && a.password === password);
-        
-        if (admin) {
-            Utils.storage.set('currentAdmin', admin);
-            return { success: true, admin };
+    adminLogin: async (username, password) => {
+        try {
+            const response = await ApiClient.post(API_CONFIG.endpoints.adminLogin, {
+                username: username,
+                password: password
+            });
+            
+            if (response.sucesso) {
+                Utils.storage.set('currentAdmin', response.admin);
+                return { success: true, admin: response.admin };
+            } else {
+                return { success: false, message: response.mensagem };
+            }
+        } catch (error) {
+            return { success: false, message: error.message || 'Erro ao fazer login' };
         }
-        
-        return { success: false, message: 'Usuário ou senha incorretos' };
     },
 
     // Logout
@@ -206,10 +186,10 @@ const Auth = {
         const admin = Auth.getCurrentAdmin();
         if (!admin) return false;
         
-        if (admin.role === 'gerente') return true; // Gerente tem acesso total
+        if (admin.funcao === 'super_admin') return true; // Super admin tem acesso total
         
-        if (admin.role === 'funcionario') {
-            // Funcionário só tem acesso ao menu de pedidos
+        if (admin.funcao === 'admin') {
+            // Admin só tem acesso ao menu de pedidos
             return permission === 'pedidos';
         }
         
@@ -222,14 +202,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login form
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(loginForm);
             const phone = formData.get('phone');
             const password = formData.get('password');
 
-            const result = Auth.login(phone, password);
+            Utils.showMessage('Fazendo login...', 'info');
+            
+            const result = await Auth.login(phone, password);
             
             if (result.success) {
                 Utils.showMessage('Login realizado com sucesso!');
@@ -245,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Register form
     const registerForm = document.getElementById('register-form');
     if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(registerForm);
@@ -261,7 +243,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 confirmPassword: formData.get('confirmPassword')
             };
 
-            const result = Auth.register(userData);
+            Utils.showMessage('Criando conta...', 'info');
+            
+            const result = await Auth.register(userData);
             
             if (result.success) {
                 Utils.showMessage('Conta criada com sucesso!');
@@ -277,13 +261,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Forgot password form
     const forgotForm = document.getElementById('forgot-password-form');
     if (forgotForm) {
-        forgotForm.addEventListener('submit', (e) => {
+        forgotForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(forgotForm);
             const phone = formData.get('phone');
 
-            const result = Auth.forgotPassword(phone);
+            Utils.showMessage('Enviando instruções...', 'info');
+            
+            const result = await Auth.forgotPassword(phone);
             
             if (result.success) {
                 Utils.showMessage(result.message);
@@ -296,20 +282,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Admin login form
     const adminLoginForm = document.getElementById('admin-login-form');
     if (adminLoginForm) {
-        adminLoginForm.addEventListener('submit', (e) => {
+        adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(adminLoginForm);
             const username = formData.get('username');
             const password = formData.get('password');
 
-            const result = Auth.adminLogin(username, password);
+            Utils.showMessage('Fazendo login...', 'info');
+            
+            const result = await Auth.adminLogin(username, password);
             
             if (result.success) {
                 Utils.showMessage('Login realizado com sucesso!');
                 document.getElementById('admin-login').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'flex';
-                Admin.loadOrders();
+                Admin.init();
             } else {
                 Utils.showMessage(result.message, 'error');
             }
